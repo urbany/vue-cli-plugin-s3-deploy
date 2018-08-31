@@ -20,10 +20,7 @@ module.exports = async (options, api) => {
   let s3 = new AWS.S3()
 
   if (await bucketExists(options.bucket)) {
-    let cwd = process.cwd()
-    let cwdPrefix = new RegExp(`^${cwd}/${options.assetPath}/`)
-    let allFileList = getAllFiles(`${cwd}/${options.assetPath}`)
-    let fileList = allFileList.filter(minimatch.filter(options.filePattern, { matchBase: true }));
+    let fileList = getFilesToUpload()
 
     let uploadCount = 0
     let uploadTotal = fileList.length
@@ -35,7 +32,7 @@ module.exports = async (options, api) => {
 
       let filename = fileList.pop()
       let fileStream = fs.readFileSync(filename)
-      let fileKey = filename.replace(cwdPrefix, '')
+      let fileKey = getBaseFilename(filename)
 
       let promise = new Promise((resolve, reject) => {
         uploadFile(options.bucket, fileKey, fileStream)
@@ -156,6 +153,26 @@ module.exports = async (options, api) => {
       const isDirectory = fs.statSync(name).isDirectory()
       return isDirectory ? [...files, ...getAllFiles(name)] : [...files, name]
     }, [])
+  }
+
+  function getBasePath() {
+    let currentPath = process.cwd();
+    let baseDir = path.join(currentPath, options.assetPath)
+    return baseDir
+  }
+
+  function getBaseFilename (filename) {
+    basePath = getBasePath()
+    let basePrefix = new RegExp(`^${basePath}/`)
+    let baseFilename = filename.replace(basePrefix, '')
+    return baseFilename
+  }
+
+  function getFilesToUpload () {
+    let basePath = getBasePath()
+    let fileList = getAllFiles(basePath)
+    let filesToUpload = fileList.filter(minimatch.filter(options.filePattern, { matchBase: true }));
+    return filesToUpload
   }
 
   function isCloudfrontEnabled () {
