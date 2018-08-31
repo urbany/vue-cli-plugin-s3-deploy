@@ -4,6 +4,7 @@ const fs = require('fs')
 const mime = require('mime-types')
 const AWS = require('aws-sdk')
 const PromisePool = require('es6-promise-pool')
+const minimatch = require('minimatch')
 
 module.exports = async (options, api) => {
   info(`Options: ${JSON.stringify(options)}`)
@@ -21,7 +22,8 @@ module.exports = async (options, api) => {
   if (await bucketExists(options.bucket)) {
     let cwd = process.cwd()
     let cwdPrefix = new RegExp(`^${cwd}/${options.assetPath}/`)
-    let fileList = getAllFiles(`${cwd}/${options.assetPath}`)
+    let allFileList = getAllFiles(`${cwd}/${options.assetPath}`)
+    let fileList = allFileList.filter(minimatch.filter(options.filePattern, { matchBase: true }));
 
     let uploadCount = 0
     let uploadTotal = fileList.length
@@ -119,6 +121,7 @@ module.exports = async (options, api) => {
       Bucket: bucket,
       Key: fileKey,
       Body: fileStream,
+      ACL: 'public-read',
       ContentType: contentTypeFor(fileKey)
     }
     let options = { partSize: 5 * 1024 * 1024, queueSize: 4 }
@@ -147,7 +150,7 @@ module.exports = async (options, api) => {
     })
   }
 
-  function getAllFiles (dir) {
+  function getAllFiles (dir, exclude) {
     return fs.readdirSync(dir).reduce((files, file) => {
       const name = path.join(dir, file)
       const isDirectory = fs.statSync(name).isDirectory()
@@ -182,13 +185,13 @@ module.exports = async (options, api) => {
 
       logWithSpinner(`Invalidating CloudFront distribution: ${ id }`)
       cloudfront.createInvalidation(params, (err, data) => {
+        stopSpinner()
+
         if (err) {
           error('Cloudfront Error!')
           error(`Code: ${err.code}`)
           error(`Message: ${err.message}`)
           error(`AWS Request ID: ${err.requestId}`)
-          
-          stopSpinner()
 
           reject(err)
         } else {
@@ -197,8 +200,6 @@ module.exports = async (options, api) => {
           info(`Call Reference: ${data['Invalidation']['InvalidationBatch']['CallerReference']}`)
           info(`See your AWS console for on-going status on this invalidation.`)
 
-          stopSpinner()
-          
           resolve()
         }
       })

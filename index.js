@@ -16,6 +16,7 @@ module.exports = (api, projectOptions) => {
       'bucket': 'The S3 bucket name (required)',
       'region': 'AWS region for the specified bucket (default: us-east-1)',
       'assetPath': 'The path to the built assets (default: dist)',
+      'filePattern': 'The path to the built assets (default: *)',
       'uploadConcurrency': 'The number of concurrent uploads to S3 (default: 3)',
       'pwa': 'Sets max-age=0 for the PWA-related files specified',
       'enableCloudfront': 'Enables support for Cloudfront distribution invalidation',
@@ -36,6 +37,7 @@ module.exports = (api, projectOptions) => {
     options.assetPath = process.env.VUE_APP_S3D_ASSET_PATH || options.assetPath
     options.region = process.env.VUE_APP_S3D_REGION || options.region
     options.pwa = process.env.VUE_APP_S3D_PWA || options.pwa
+    options.filePattern = process.env.VUE_APP_S3D_FILEPATTERN || options.filePattern
     options.uploadConcurrency = process.env.VUE_APP_S3D_UPLOAD_CONCURRENCY || options.uploadConcurrency
     options.enableCloudfront = process.env.VUE_APP_S3D_ENABLE_CLOUDFRONT || options.enableCloudfront
     options.cloudfrontId = process.env.VUE_APP_S3D_CLOUDFRONT_ID || options.cloudfrontId

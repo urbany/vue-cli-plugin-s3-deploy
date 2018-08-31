@@ -6,6 +6,12 @@ module.exports = [
     default: 'dist'
   },
   {
+    name: 'filePattern',
+    type: 'input',
+    message: 'Which files should be uploaded (glob pattern)?',
+    default: '**/*.{html,js,css,png,gif,ico,jpg,map,xml,txt,svg,swf,eot,ttf,woff,woff2}'
+  },
+  {
     name: 'bucket',
     type: 'input',
     message: 'Name of the S3 bucket:',
