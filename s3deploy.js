@@ -22,8 +22,8 @@ module.exports = async (options, api) => {
   if (await bucketExists(options.bucket)) {
     let fileList = getFilesToUpload()
 
-    let uploadCount = 0
     let uploadTotal = fileList.length
+    let uploadedFileList = []
 
     info(`Deploying ${fileList.length} assets from ./${options.assetPath}/ to s3://${options.bucket}/`)
 
@@ -37,8 +37,8 @@ module.exports = async (options, api) => {
       let promise = new Promise((resolve, reject) => {
         uploadFile(options.bucket, fileKey, fileStream)
         .then(() => {
-          uploadCount++
-          info(`(${uploadCount}/${uploadTotal}) Uploaded ${fileKey}`)
+          uploadedFileList.push(fileKey)
+          info(`(${uploadedFileList.length}/${uploadTotal}) Uploaded ${fileKey}`)
           resolve()
         })
         .catch((e) => {
@@ -58,7 +58,8 @@ module.exports = async (options, api) => {
     poolPromise.then(() => {
       info('Deploy complete.')
       handlePWAFiles(options)
-      invalidateDistribution(options.cloudfrontId, options.cloudfrontMatchers)
+      let matcher = getInvalidationMatcher(uploadedFileList, options)
+      invalidateDistribution(options.cloudfrontId, matcher)
     }, (err) => {
       error(err.toString())
     })
@@ -86,6 +87,11 @@ module.exports = async (options, api) => {
         }
       }
     }
+  }
+
+  function getInvalidationMatcher (uploadedFileList, options) {
+    let matcher = options.cloudfrontMatchers
+    return matcher ? matcher.split(',') : uploadedFileList.map(fn => `/${fn}`);
   }
 
   function contentTypeFor(filename) {
@@ -181,14 +187,11 @@ module.exports = async (options, api) => {
     return options.enableCloudfront === true || options.enableCloudfront.toString().toLowerCase() === 'true'
   }
 
-  function invalidateDistribution (id, matcher) {
+  function invalidateDistribution(id, invalidationItems) {
     if (!isCloudfrontEnabled()) { return }
 
     let cloudfront = new AWS.CloudFront()
-
     return new Promise((resolve, reject) => {
-      let invalidationItems = options.cloudfrontMatchers.split(',')
-
       let params = {
         DistributionId: id,
         InvalidationBatch: {
