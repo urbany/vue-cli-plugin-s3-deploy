@@ -35,7 +35,7 @@ module.exports = async (options, api) => {
       let fileKey = getBaseFilename(filename)
 
       let promise = new Promise((resolve, reject) => {
-        uploadFile(options.bucket, fileKey, fileStream)
+        uploadFile(options.bucket, fileKey, fileStream, options)
         .then(() => {
           uploadedFileList.push(fileKey)
           info(`(${uploadedFileList.length}/${uploadTotal}) Uploaded ${fileKey}`)
@@ -104,6 +104,7 @@ module.exports = async (options, api) => {
       CopySource: `${bucket}/${fileKey}`,
       Bucket: bucket,
       Key: fileKey,
+      ACL: 'public-read',
       CacheControl: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
       ContentType: contentTypeFor(fileKey),
       MetadataDirective: 'REPLACE'
@@ -119,12 +120,13 @@ module.exports = async (options, api) => {
     })
   }
 
-  async function uploadFile (bucket, fileKey, fileStream) {
+  async function uploadFile (bucket, fileKey, fileStream, { cacheControl }) {
     let params = {
       Bucket: bucket,
       Key: fileKey,
       Body: fileStream,
       ACL: 'public-read',
+      CacheControl: cacheControl,
       ContentType: contentTypeFor(fileKey)
     }
     let options = { partSize: 5 * 1024 * 1024, queueSize: 4 }

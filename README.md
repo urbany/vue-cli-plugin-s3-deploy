@@ -43,6 +43,7 @@ Options are set in `vue.config.js` and overridden on a per-environment basis by 
     bucket: "The S3 bucket name (required)",
     region: "AWS region for the specified bucket (default: us-east-1)",
     assetPath: "The path to the built assets (default: dist)",
+    cacheControl: "Cache Control",
     uploadConcurrency: "The number of concurrent uploads to S3 (default: 3)",
     pwa: "Sets max-age=0 for the PWA-related files specified",
     enableCloudfront: "Enables support for Cloudfront distribution invalidation",
@@ -90,7 +91,7 @@ Changelog
 - Fixed bug where deployment crashes if you declined Cloudfront on initial invocation.
 
 **v2.0.0**
-- Added support for invalidating Cloudfront distributions on deploy. 
+- Added support for invalidating Cloudfront distributions on deploy.
 - Refactored how the configuration is stored and brought it more inline with vue cli standards. All config is in vue.config.js now.
 - Updated the dependency on vue-cli to 3.0.0-rc3
 - Squashed a few bugs along the way
@@ -107,5 +108,5 @@ Changelog
 Contributing
 ---
 
-Contributions welcome. 
+Contributions welcome.
 Just open a pull request.
